@@ -760,7 +760,7 @@ class ScreenFade():
 
 		return fade_complete
 
-#class' instantiation
+#Instantiation
 #fades
 intro_fade = ScreenFade(1, BLACK, 4)
 death_fade = ScreenFade(2, BLACK, 4)
