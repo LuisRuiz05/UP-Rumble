@@ -1,0 +1,19 @@
+**Cristian: Ir al gym
+Tiene munición infinita y su cooldown de disparo es de 0, durante 10 segundos
+*Jafet: Raytracer
+Lanza rayos con su raytracer y mata a todos los enemigos en pantalla
+**del Puerto: Booleana Loca
+Desactiva una booleana aleatoria de los enemigos en pantalla, puede ser desde alive, hasta moviento, shoot, etc
+**Piña: Invoca a Dios
+Consigue invensibilidad por 10 segundos
+**Alcaraz: Reducción al absurdo
+Desactiva el ia de los enemigos
+*Pablo Esparza: MyRobot
+Invoca a un robot aliado
+**Elba: Bombardeo existencial
+Se le otorgan 7 granadas para bombardear tu dignidad
+
+
+
+**Raquel: Falla iterada
+Si el usuario falla un tiro a Raquel, muere automáticamente
