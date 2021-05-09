@@ -168,6 +168,7 @@ class Soldier(pygame.sprite.Sprite):
 		self.active_boss = False
 		#ai specific variables
 		self.move_counter = 0
+		self.ai_shoot_cooldown = 0
 		if char_type == 'agents/Raquel':
 			if AGENT == 'agents/Alcaraz':
 				self.vision = pygame.Rect(0, 0, 150, 20)
@@ -209,6 +210,8 @@ class Soldier(pygame.sprite.Sprite):
 		#update cooldown
 		if self.shoot_cooldown > 0:
 			self.shoot_cooldown -= 1
+		if self.ai_shoot_cooldown > 0:
+			self.ai_shoot_cooldown -= 1
 		if self.heal_cooldown > 0:
 			self.heal_cooldown -= 1
 
@@ -310,6 +313,9 @@ class Soldier(pygame.sprite.Sprite):
 
 	def ai(self):
 		if self.alive and player.alive and player.can_ai:
+			#if self.rect.colliderect(player.rect):
+			#	player.health -= .01
+
 			if self.idling == False and random.randint(1, 200) == 1:
 				self.update_action(0)#0: idle
 				self.idling = True
@@ -317,15 +323,15 @@ class Soldier(pygame.sprite.Sprite):
 					self.idling_counter = 5
 				else:
 					self.idling_counter = 50
-			#check if the ai in near the player
-			if self.vision.colliderect(player.rect):
+			#check if the ai is watching the player
+			if self.vision.colliderect(player.rect) and self.ai_shoot_cooldown == 0:
 				#stop running and face the player
 				self.update_action(0)
 				if self.char_type == 'agents/Raquel' and player.raquel_can_shoot:
 					self.shoot()
-				elif self.char_type == 'enemy':
+				elif self.char_type == 'enemy' :
 					self.shoot()
-					self.shoot()
+				self.ai_shoot_cooldown = 25
 			else:
 				if self.idling == False:
 					if self.direction == 1:
@@ -339,11 +345,11 @@ class Soldier(pygame.sprite.Sprite):
 					#update ai vision as the enemy moves
 					if self.char_type == 'agents/Raquel':
 						if self.char_type == 'agents/Alcaraz':
-							self.vision.center = (self.rect.centerx + 75 * self.direction, self.rect.centery)
+							self.vision.center = (self.rect.centerx + 115 * self.direction, self.rect.centery)
 						else:
-							self.vision.center = (self.rect.centerx + 265 * self.direction, self.rect.centery)
+							self.vision.center = (self.rect.centerx + 285 * self.direction, self.rect.centery)
 					else:
-						self.vision.center = (self.rect.centerx + 75 * self.direction, self.rect.centery)
+						self.vision.center = (self.rect.centerx + 115 * self.direction, self.rect.centery)
 
 					if self.move_counter > TILE_SIZE:
 						self.direction *= -1
@@ -392,7 +398,7 @@ class Soldier(pygame.sprite.Sprite):
 		if AGENT == 'agents/Piña' and self.type != 'enemy' and active_ultimate:
 			if self.health < 100 and self.heal_cooldown == 0:
 				self.health += 1
-				self.heal_cooldown = 15
+				self.heal_cooldown = 25
 
 	def delPuerto_ultimate(self, enemy):
 		if AGENT == 'agents/DelPuerto' and self.type != 'enemy' and self.random_taken == False and self.active_boss:
@@ -556,8 +562,6 @@ class Bullet(pygame.sprite.Sprite):
 			self.kill()
 		#check for collision with level
 		for tile in world.obstacle_list:
-			#if not player.raquel_can_ultimate and level == MAX_LEVELS:
-			#	player.health -= 200
 			if tile[1].colliderect(self.rect):
 				self.kill()
 
