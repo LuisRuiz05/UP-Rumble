@@ -4,6 +4,8 @@ import os
 import random
 import csv
 
+from gtts import gTTS
+
 #initialize pygame and it's mixer component for audio
 mixer.init()
 pygame.init()
@@ -59,15 +61,13 @@ grenade_sound = pygame.mixer.Sound('audio/grenade.wav')
 grenade_sound.set_volume(0.5)
 
 #load images
+
 #buttons
 start_img = pygame.image.load('images/buttons/start_btn.png').convert_alpha()
 exit_img = pygame.image.load('images/buttons/exit_btn.png').convert_alpha()
 restart_img = pygame.image.load('images/buttons/restart_btn.png').convert_alpha()
 #background
-pine1_img = pygame.image.load('images/background/pine1.png').convert_alpha()
-up_img = pygame.image.load('images/background/pine2.png').convert_alpha()
-mountain_img = pygame.image.load('images/background/mountain.png').convert_alpha()
-sky_img = pygame.image.load('images/background/sky_cloud.png').convert_alpha()
+up_bg_img = pygame.image.load('images/background/up_bg.png')
 #characters
 alcaraz = pygame.image.load('images/characters/alcaraz.png').convert_alpha()
 cristian = pygame.image.load('images/characters/cristian.png').convert_alpha()
@@ -92,7 +92,6 @@ health_box_img = pygame.image.load('images/tile/19.png').convert_alpha()
 RED = (255, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
-BG = (69, 184, 40)
 BLACK = (0, 0, 0)
 
 #define font
@@ -110,14 +109,7 @@ def black_bg():
 
 def draw_bg():
 	#updates the game background
-	screen.fill(BG)
-	width = sky_img.get_width()
-	for x in range(5):
-		#updates the background by giving the user a sensation of movement in every layer of it, except at the up building, that one keeps static
-		screen.blit(sky_img, ((x * width) - bg_scroll * 0.5, 0))
-		screen.blit(mountain_img, ((x * width) - bg_scroll * 0.6, SCREEN_HEIGHT - mountain_img.get_height() - 300))
-		screen.blit(pine1_img, ((x * width) - bg_scroll * 0.7, SCREEN_HEIGHT - pine1_img.get_height() - 150))
-		screen.blit(up_img, ((0, SCREEN_HEIGHT - up_img.get_height())))#75
+	screen.blit(up_bg_img, ((0, 0)))
 
 def reset_level():
 	#clears all groups so they can be loaded again later on, it avoids duplicate of enemies, tiles and even the player.
@@ -139,7 +131,6 @@ def reset_level():
 	return data
 
 #Classes
-#####################################################################################################################################################
 class Soldier(pygame.sprite.Sprite):
 	def __init__(self, char_type, x, y, scale, speed, grenades):
 		pygame.sprite.Sprite.__init__(self)
@@ -425,7 +416,6 @@ class Soldier(pygame.sprite.Sprite):
 	def draw(self):
 		screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
 
-#####################################################################################################################################################
 class World():
 	def __init__(self):
 		self.obstacle_list = []
@@ -482,7 +472,6 @@ class World():
 			tile[1][0] += screen_scroll
 			screen.blit(tile[0], tile[1])
 
-#####################################################################################################################################################
 class Decoration(pygame.sprite.Sprite):
 	def __init__(self, img, x, y):
 		pygame.sprite.Sprite.__init__(self)
@@ -493,7 +482,6 @@ class Decoration(pygame.sprite.Sprite):
 	def update(self):
 		self.rect.x += screen_scroll
 
-#####################################################################################################################################################
 class Water(pygame.sprite.Sprite):
 	def __init__(self, img, x, y):
 		pygame.sprite.Sprite.__init__(self)
@@ -504,7 +492,6 @@ class Water(pygame.sprite.Sprite):
 	def update(self):
 		self.rect.x += screen_scroll
 
-#####################################################################################################################################################
 class Exit(pygame.sprite.Sprite):
 	def __init__(self, img, x, y):
 		pygame.sprite.Sprite.__init__(self)
@@ -515,7 +502,6 @@ class Exit(pygame.sprite.Sprite):
 	def update(self):
 		self.rect.x += screen_scroll
 
-#####################################################################################################################################################
 class ItemBox(pygame.sprite.Sprite):
 	def __init__(self, x, y):
 		pygame.sprite.Sprite.__init__(self)
@@ -535,7 +521,6 @@ class ItemBox(pygame.sprite.Sprite):
 			#delete the item box
 			self.kill()
 
-#####################################################################################################################################################
 class HealthBar():
 	def __init__(self, x, y, health, max_health):
 		self.x = x
@@ -552,7 +537,6 @@ class HealthBar():
 		pygame.draw.rect(screen, RED, (self.x, self.y, 150, 20))
 		pygame.draw.rect(screen, GREEN, (self.x, self.y, 150 * ratio, 20))
 
-#####################################################################################################################################################
 class Bullet(pygame.sprite.Sprite):
 	def __init__(self, x, y, direction):
 		pygame.sprite.Sprite.__init__(self)
@@ -588,7 +572,6 @@ class Bullet(pygame.sprite.Sprite):
 					enemy.health -= 25
 					self.kill()
 
-#####################################################################################################################################################
 class RaquelsBullet(pygame.sprite.Sprite):
 	def __init__(self, x, y, direction):
 		pygame.sprite.Sprite.__init__(self)
@@ -617,7 +600,6 @@ class RaquelsBullet(pygame.sprite.Sprite):
 				player.health -= 5
 				self.kill()
 
-#####################################################################################################################################################
 class Grenade(pygame.sprite.Sprite):
 	def __init__(self, x, y, direction):
 		pygame.sprite.Sprite.__init__(self)
@@ -675,7 +657,6 @@ class Grenade(pygame.sprite.Sprite):
 					abs(self.rect.centery - enemy.rect.centery) < TILE_SIZE * 2:
 					enemy.health -= 50
 
-#####################################################################################################################################################
 class Explosion(pygame.sprite.Sprite):
 	def __init__(self, x, y, scale):
 		pygame.sprite.Sprite.__init__(self)
@@ -707,7 +688,6 @@ class Explosion(pygame.sprite.Sprite):
 			else:
 				self.image = self.images[self.frame_index]
 
-#####################################################################################################################################################
 class Button():
 	def __init__(self,x, y, image, scale):
 		width = image.get_width()
@@ -737,7 +717,6 @@ class Button():
 
 		return action
 
-#####################################################################################################################################################
 class ScreenFade():
 	def __init__(self, direction, color, speed):
 		self.direction = direction
@@ -779,7 +758,6 @@ piña_button = Button(SCREEN_WIDTH // 2 - 160, 0 + 280, piña, 1)
 
 #create sprite groups
 enemy_group = pygame.sprite.Group()
-boss_group = pygame.sprite.Group()
 bullet_group = pygame.sprite.Group()
 grenade_group = pygame.sprite.Group()
 explosion_group = pygame.sprite.Group()
@@ -793,14 +771,14 @@ run = True
 while run:
 	clock.tick(FPS)
 
-	#menu
+	#main menu
 	if choose_agent == False:
 		screen.blit(programIcon, (SCREEN_WIDTH // 2 - 230, 0))
 		if start_button.draw(screen):
 			choose_agent = True
 		if exit_button.draw(screen):
 			run = False
-	#choose agent
+	#choose agent menu
 	else:
 		black_bg()
 		draw_text('Choose your fighter: ', font, WHITE, 10, 35)
@@ -850,32 +828,33 @@ while run:
 		health_bar.draw(player.health)
 		player.update()
 		player.draw()
+		#show the character's ultimate name at the left corner
 		if level == MAX_LEVELS:
 			if AGENT == 'agents/Alcaraz':
-				draw_text('Reducing to an Absurdity', font, WHITE, 10, 35)
+				draw_text('Reducing to an Absurdity', font, BLACK, 10, 35)
 			if AGENT == 'agents/Cristian':
-				draw_text('Power Gym', font, WHITE, 10, 35)
+				draw_text('Power Gym', font, BLACK, 10, 35)
 			if AGENT == 'agents/DelPuerto':
-				draw_text('Lethal Boolean', font, WHITE, 10, 35)
+				draw_text('Lethal Boolean', font, BLACK, 10, 35)
 			if AGENT == 'agents/Elba':
-				draw_text('Dignity-Bomb', font, WHITE, 10, 35)
+				draw_text('Dignity-Bomb', font, BLACK, 10, 35)
 			if AGENT == 'agents/Piña':
-				draw_text("God's protection", font, WHITE, 10, 35)
+				draw_text("God's protection", font, BLACK, 10, 35)
 			active_ultimate = True
+		#counts enemies in level and the dead ones, so if both are equal, level can be completed, instead,
+		# the character must return to kill them all and then, complete the level.
 		enemies_in_level = len(enemy_group)
 		dead_enemies = 0
 
 		#update enemy and its behaviour
 		for enemy in enemy_group:
+			#check if the character's challenging Raquel, so he can apply its ultimate
 			player.delPuerto_ultimate(enemy)
 			if not enemy.alive:
 				dead_enemies += 1
 			enemy.ai()
 			enemy.update()
 			enemy.draw()
-
-		for boss in boss_group:
-			boss.update()
 
 		if enemies_in_level - dead_enemies == 0:
 			next_level = True
@@ -915,15 +894,14 @@ while run:
 				grenade = Grenade(player.rect.centerx + (0.5 * player.rect.size[0] * player.direction),\
 				 			player.rect.top, player.direction)
 				grenade_group.add(grenade)
-				#reduce grenades
 				player.grenades -= 1
 				grenade_thrown = True
 			if player.in_air:
-				player.update_action(2)#2: jump
+				player.update_action(2)#jump
 			elif moving_left or moving_right:
-				player.update_action(1)#1: run
+				player.update_action(1)#run
 			else:
-				player.update_action(0)#0: idle
+				player.update_action(0)#idle
 			screen_scroll, level_complete = player.move(moving_left, moving_right)
 			bg_scroll -= screen_scroll
 			#check if player has completed the level
@@ -932,8 +910,8 @@ while run:
 				level += 1
 				bg_scroll = 0
 				world_data = reset_level()
+				#load in level data and create world
 				if level <= MAX_LEVELS:
-					#load in level data and create world
 					with open(f'levels/level{level}_data.csv', newline='') as csvfile:
 						reader = csv.reader(csvfile, delimiter=',')
 						for x, row in enumerate(reader):
@@ -948,6 +926,7 @@ while run:
 		else:
 			screen_scroll = 0
 			if death_fade.fade():
+				#reload current level and try again
 				if restart_button.draw(screen):
 					death_fade.fade_counter = 0
 					start_intro = True
