@@ -4,8 +4,6 @@ import os
 import random
 import csv
 
-from gtts import gTTS
-
 #initialize pygame and it's mixer component for audio
 mixer.init()
 pygame.init()
@@ -98,10 +96,16 @@ BLACK = (0, 0, 0)
 font = pygame.font.SysFont('Futura', 30)
 
 #Global functions
-def draw_text(text, font, text_col, x, y):
+def draw_text(text, font, color, x, y):
 	#it's used to draw some input text in x y coordinates
-	img = font.render(text, True, text_col)
+	img = font.render(text, True, color)
 	screen.blit(img, (x, y))
+
+def draw_cut_scene_text(text, font, size, color, x, y):
+	text_surface = font.render(text, True, color)
+	text_rect = text_surface.get_rect()
+	text_rect.topleft = (x,y)
+	screen.blit(text_surface, text_rect)
 
 def black_bg():
 	#clears the screen
@@ -422,6 +426,11 @@ class Soldier(pygame.sprite.Sprite):
 	def draw(self):
 		screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
 
+	def win(self, enemy):
+		if enemy.char_type == 'agents/Raquel':
+			if enemy.health <= 0:
+				cut_scene_manager.start_cut_scene(VictoryCutScene())
+
 class World():
 	def __init__(self):
 		self.obstacle_list = []
@@ -659,7 +668,7 @@ class Grenade(pygame.sprite.Sprite):
 			for enemy in enemy_group:
 				if abs(self.rect.centerx - enemy.rect.centerx) < TILE_SIZE * 2 and \
 					abs(self.rect.centery - enemy.rect.centery) < TILE_SIZE * 2:
-					enemy.health -= 50
+					enemy.health -= 150
 
 class Explosion(pygame.sprite.Sprite):
 	def __init__(self, x, y, scale):
@@ -743,7 +752,347 @@ class ScreenFade():
 
 		return fade_complete
 
+class CutScene():
+	def __init__(self, screen):
+		self.cut_scenes_complete = []
+		self.cut_scene = None
+		self.cut_scene_running = False
+		#Drawing Variables
+		self.screen = screen
+		self.window_size = 0
+
+	def start_cut_scene(self, cut_scene):
+		if cut_scene.name not in self.cut_scenes_complete:
+			self.cut_scenes_complete.append(cut_scene.name)
+			self.cut_scene = cut_scene
+			self.cut_scene_running = True
+
+	def end_cut_scene(self):
+		self.cut_scene = None
+		self.cut_scene_running = False
+
+	def update(self):
+		if self.cut_scene_running:
+			if self.window_size < self.screen.get_height() * 0.3:
+				self.window_size += 2
+			self.cut_scene_running = self.cut_scene.update()
+		else:
+			self.end_cut_scene()
+
+	def draw(self):
+		if self.cut_scene_running:
+			#Draw generic rect to all cut scenes
+			pygame.draw.rect(self.screen, (0,0,0), (0,0,self.screen.get_width(),self.window_size))
+			#Draw specific text for cut scene
+			self.cut_scene.draw()
+
+class InstructionsCutScene():
+	def __init__(self):
+		#Variables
+		self.name = "Instructions"
+		self.step = 0
+		self.timer = pygame.time.get_ticks()
+		self.cut_scene_running = True
+		#Dialogue
+		self.text = {
+			'one': "Welcome to UP Rumble     ",
+			'two': "Complete every level to fight the final boss     ",
+			'three': "Oh, and don't let any enemy alive... Good luck!     "
+		}
+		self.text_counter = 0
+
+	def update(self):
+		#First part
+		if self.step == 0:
+			if int(self.text_counter) < len(self.text['one']):
+				self.text_counter += 0.1
+			else:
+				self.step = 1
+		#Second part
+		if self.step == 1:
+			if int(self.text_counter) < len(self.text['two']):
+				self.text_counter += 0.08
+			else:
+				self.step = 2
+		#Third part
+		if self.step == 2:
+			if int(self.text_counter) < len(self.text['three']):
+				self.text_counter += 0.03
+			else:
+				#Finish the cut scene
+				self.cut_scene_running = False
+
+		return self.cut_scene_running
+
+	def draw(self):
+		if self.step == 0:
+			draw_cut_scene_text(
+				self.text['one'][0:int(self.text_counter)],
+				font,
+				50,
+				WHITE,
+				50,
+				50
+			)
+		if self.step == 1:
+			draw_cut_scene_text(
+				self.text['two'][0:int(self.text_counter)],
+				font,
+				50,
+				WHITE,
+				50,
+				50
+			)
+		if self.step == 2:
+			draw_cut_scene_text(
+				self.text['three'][0:int(self.text_counter)],
+				font,
+				50,
+				WHITE,
+				50,
+				50
+			)
+
+class PrebossCutScene():
+	def __init__(self):
+		#Variables
+		self.name = "Pre-boss"
+		self.step = 0
+		self.timer = pygame.time.get_ticks()
+		self.cut_scene_running = True
+		#Dialogue
+		self.text = {
+			'one': "You're pretty close     ",
+			'two': "You'll finally fight the final boss and save the university     ",
+			'three': "Soon you'll discover your special power     "
+		}
+		self.text_counter = 0
+
+	def update(self):
+		cheat = False
+		#First part
+		if self.step == 0:
+			if int(self.text_counter) < len(self.text['one']):
+				self.text_counter += 0.1
+			else:
+				self.step = 1
+		#Second part
+		if self.step == 1:
+			if int(self.text_counter) < len(self.text['two']):
+				self.text_counter += 0.2
+			else:
+				self.step = 2
+		#Third part
+		if self.step == 2:
+			if not cheat:
+				self.text_counter = 40
+				cheat = True
+			if int(self.text_counter) < len(self.text['three']):
+				self.text_counter += 0.02
+			else:
+				#Finish the cut scene
+				self.cut_scene_running = False
+
+		return self.cut_scene_running
+
+	def draw(self):
+		if self.step == 0:
+			draw_cut_scene_text(
+				self.text['one'][0:int(self.text_counter)],
+				font,
+				50,
+				WHITE,
+				50,
+				50
+			)
+		if self.step == 1:
+			draw_cut_scene_text(
+				self.text['two'][0:int(self.text_counter)],
+				font,
+				50,
+				WHITE,
+				50,
+				50
+			)
+		if self.step == 2:
+			draw_cut_scene_text(
+				self.text['three'][0:int(self.text_counter)],
+				font,
+				50,
+				WHITE,
+				50,
+				50
+			)
+
+class BossLevelCutScene():
+	def __init__(self):
+		#Variables
+		self.name = "Boss-fight"
+		self.step = 0
+		self.timer = pygame.time.get_ticks()
+		self.cut_scene_running = True
+		#Dialogue
+		if AGENT == 'agents/Alcaraz':
+			self.text = {
+				'one': "Nice job agent, let's do this!     ",
+				'two': "With your powers, you achieved the final boss to get weaker.     ",
+				'three': "Don't forget it, DON'T MISS A SHOT     "
+			}
+
+		if AGENT == 'agents/Cristian':
+			self.text = {
+				'one': "Nice job agent, let's do this!     ",
+				'two': "With your powers, you can shoot faster and defeat her.     ",
+				'three': "Don't forget it, DON'T MISS A SHOT     "
+			}
+
+		if AGENT == 'agents/DelPuerto':
+			self.text = {
+				'one': "Nice job agent, let's do this!     ",
+				'two': "You randomly desactived one of her crucial powers so, go for her.     ",
+				'three': "Probably you can miss some bullets, but try to avoid it...     "
+			}
+
+		if AGENT == 'agents/Elba':
+			self.text = {
+				'one': "Nice job agent, let's do this!     ",
+				'two': "You've got 7 grandes in your inventory, make her blow up. (Press E key)     ",
+				'three': "Don't forget it, DON'T MISS A SHOT     "
+			}
+
+		if AGENT == 'agents/Piña':
+			self.text = {
+				'one': "Nice job agent, let's do this!     ",
+				'two': "Fortunately, your health will recover with time.     ",
+				'three': "Don't forget it, DON'T MISS A SHOT     "
+			}
+
+		self.text_counter = 0
+
+	def update(self):
+		#First part
+		if self.step == 0:
+			if int(self.text_counter) < len(self.text['one']):
+				self.text_counter += 0.15
+			else:
+				self.step = 1
+		#Second part
+		if self.step == 1:
+			if int(self.text_counter) < len(self.text['two']):
+				self.text_counter += 0.05
+			else:
+				self.step = 2
+		#Third part
+		if self.step == 2:
+			if int(self.text_counter) < len(self.text['three']):
+				self.text_counter += 0.001
+			else:
+				#Finish the cut scene
+				self.cut_scene_running = False
+
+		return self.cut_scene_running
+
+	def draw(self):
+		if self.step == 0:
+			draw_cut_scene_text(
+				self.text['one'][0:int(self.text_counter)],
+				font,
+				50,
+				WHITE,
+				50,
+				50
+			)
+		if self.step == 1:
+			draw_cut_scene_text(
+				self.text['two'][0:int(self.text_counter)],
+				font,
+				50,
+				WHITE,
+				50,
+				50
+			)
+		if self.step == 2:
+			draw_cut_scene_text(
+				self.text['three'][0:int(self.text_counter)],
+				font,
+				50,
+				WHITE,
+				50,
+				50
+			)
+
+class VictoryCutScene():
+	def __init__(self):
+		#Variables
+		self.name = "Victory"
+		self.step = 0
+		self.timer = pygame.time.get_ticks()
+		self.cut_scene_running = True
+		#Dialogue
+		self.text = {
+			'one': "You did this! You avenged UP!     ",
+			'two': "Awesome job agent, you restored the lost peace.     ",
+			'three': "Thanks a lot for playing!     "
+		}
+		self.text_counter = 0
+
+	def update(self):
+		#First part
+		if self.step == 0:
+			if int(self.text_counter) < len(self.text['one']):
+				self.text_counter += 0.15
+			else:
+				self.step = 1
+		#Second part
+		if self.step == 1:
+			if int(self.text_counter) < len(self.text['two']):
+				self.text_counter += 0.15
+			else:
+				self.step = 2
+		#Third part
+		if self.step == 2:
+			self.text_counter = 25
+			if int(self.text_counter) < len(self.text['three']):
+				self.text_counter += 0.1
+			else:
+				#Finish the cut scene
+				self.cut_scene_running = False
+
+		return self.cut_scene_running
+
+	def draw(self):
+		if self.step == 0:
+			draw_cut_scene_text(
+				self.text['one'][0:int(self.text_counter)],
+				font,
+				50,
+				WHITE,
+				50,
+				50
+			)
+		if self.step == 1:
+			draw_cut_scene_text(
+				self.text['two'][0:int(self.text_counter)],
+				font,
+				50,
+				WHITE,
+				50,
+				50
+			)
+		if self.step == 2:
+			draw_cut_scene_text(
+				self.text['three'][0:int(self.text_counter)],
+				font,
+				50,
+				WHITE,
+				50,
+				50
+			)
+
 #Instantiation
+#cut scene manager
+cut_scene_manager = CutScene(screen)
+
 #fades
 intro_fade = ScreenFade(1, BLACK, 4)
 death_fade = ScreenFade(2, BLACK, 4)
@@ -826,12 +1175,15 @@ while run:
 			player.shoot_cooldown = 20
 		#update background
 		draw_bg()
+		cut_scene_manager.update()
+		cut_scene_manager.draw()
 		#draw world map
 		world.draw()
 		#show player health
 		health_bar.draw(player.health)
 		player.update()
 		player.draw()
+		cut_scene_manager.start_cut_scene(InstructionsCutScene())
 		#show the character's ultimate name at the left corner
 		if level == MAX_LEVELS:
 			if AGENT == 'agents/Alcaraz':
@@ -854,6 +1206,7 @@ while run:
 		for enemy in enemy_group:
 			#check if the character's challenging Raquel, so he can apply its ultimate
 			player.delPuerto_ultimate(enemy)
+			player.win(enemy)
 			if not enemy.alive:
 				dead_enemies += 1
 			enemy.ai()
@@ -914,6 +1267,8 @@ while run:
 				level += 1
 				bg_scroll = 0
 				world_data = reset_level()
+				if level == MAX_LEVELS-1:
+					cut_scene_manager.start_cut_scene(PrebossCutScene())
 				#load in level data and create world
 				if level <= MAX_LEVELS:
 					with open(f'levels/level{level}_data.csv', newline='') as csvfile:
@@ -925,6 +1280,7 @@ while run:
 					player, health_bar = world.process_data(world_data)
 					player.shoot_cooldown = 20
 					if level == MAX_LEVELS:
+						cut_scene_manager.start_cut_scene(BossLevelCutScene())
 						player.elba_ultimate()
 		#death
 		else:
